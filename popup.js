@@ -23,21 +23,25 @@ var bkg = chrome.extension.getBackgroundPage();
 //   });
 // };
 
+function addCardOnClick() {
+  let noteId = new Date().valueOf();
+  let note = { text: "", noteId };
+  appendCard(note,true);
+  let content = document.querySelector(`[data-edit-id="${noteId}"]`);
+  content.focus();
+  getNotesAnd(notes => {
+    notes.push(note);
+
+    chrome.storage.sync.set({ notes });
+  });
+}
+
 document.addEventListener("DOMContentLoaded", e => {
   let el = document.getElementsByClassName("content_card--dummy")[0];
-  el &&
-    (el.onclick = () => {
-      let noteId = new Date().valueOf();
-      let note = { text: "", noteId };
-      appendCard(note);
-      let content = document.querySelector(`[data-edit-id="${noteId}"]`);
-      content.focus();
-      getNotesAnd(notes => {
-        notes.push(note);
+  el && (el.onclick = addCardOnClick);
 
-        chrome.storage.sync.set({ notes });
-      });
-    });
+  let add_notes_btn = document.getElementById("add_notes_btn");
+  add_notes_btn.onclick = addCardOnClick;
 });
 
 //append previously pasted cards
@@ -87,6 +91,11 @@ function getClipboardData() {
   return text;
 }
 
+/**
+ * 
+ * @param {object} param0 
+ * @param {boolean} animation 
+ */
 function appendCard({ text, noteId }, animation) {
   let contentCard = document.createElement("div");
   contentCard.setAttribute("data-note-id", noteId);
@@ -104,10 +113,25 @@ function appendCard({ text, noteId }, animation) {
   document.querySelector(`[data-remove-id="${noteId}"]`).onclick = () =>
     removeNote(noteId);
   let content = contentCard.getElementsByClassName("note-content")[0];
-  content.onblur = e => onEditComplete(e.target, noteId, () => {});
-  content.onFocus = e => {
+
+  content.onfocus = e => {
     focusedNoteId = noteId;
+    //add save icon.
+    contentCard.insertAdjacentHTML(
+      "beforeend",
+      `<div class="" id="save_card_btn" >${saveIcon}</div>`
+    );
+
+    let saveBtn = document.getElementById("save_card_btn");
+    // alert(!!saveBtn);
+    saveBtn &&
+      (saveBtn.onclick = () => {
+        onEditComplete(content, noteId);
+        saveBtn.parentNode.removeChild(saveBtn);
+      });
   };
+
+  content.onkeyup = e => {};
   content.addEventListener("paste", pasteAsPlainText);
   document.querySelector(`[data-edit-id="${noteId}"]`).onclick = () => {
     // content.focus();
@@ -162,6 +186,9 @@ PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8v
 
 const saveIcon = `<img src="data:image/svg+xml;base64,
 PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2ZXJzaW9uPSIxLjEiIGlkPSJDYXBhXzEiIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgNDkgNDkiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDQ5IDQ5OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGNsYXNzPSIiPjxnIHRyYW5zZm9ybT0ibWF0cml4KDAuODc3NTIxIDAgMCAwLjg3NzUyMSAzLjAwMDczIDMuMDAwNzMpIj48Zz4KCTxyZWN0IHg9IjI3LjUiIHk9IjUiIHdpZHRoPSI2IiBoZWlnaHQ9IjEwIiBkYXRhLW9yaWdpbmFsPSIjMDAwMDAwIiBjbGFzcz0iYWN0aXZlLXBhdGgiIHN0eWxlPSJmaWxsOiNDQ0NDQ0MiIGRhdGEtb2xkX2NvbG9yPSIjY2NjY2NjIj48L3JlY3Q+Cgk8cGF0aCBkPSJNMzkuOTE0LDBIMC41djQ5aDQ4VjguNTg2TDM5LjkxNCwweiBNMTAuNSwyaDI2djE2aC0yNlYyeiBNMzkuNSw0N2gtMzFWMjZoMzFWNDd6IiBkYXRhLW9yaWdpbmFsPSIjMDAwMDAwIiBjbGFzcz0iYWN0aXZlLXBhdGgiIHN0eWxlPSJmaWxsOiNDQ0NDQ0MiIGRhdGEtb2xkX2NvbG9yPSIjY2NjY2NjIj48L3BhdGg+Cgk8cGF0aCBkPSJNMTMuNSwzMmg3YzAuNTUzLDAsMS0wLjQ0NywxLTFzLTAuNDQ3LTEtMS0xaC03Yy0wLjU1MywwLTEsMC40NDctMSwxUzEyLjk0NywzMiwxMy41LDMyeiIgZGF0YS1vcmlnaW5hbD0iIzAwMDAwMCIgY2xhc3M9ImFjdGl2ZS1wYXRoIiBzdHlsZT0iZmlsbDojQ0NDQ0NDIiBkYXRhLW9sZF9jb2xvcj0iI2NjY2NjYyI+PC9wYXRoPgoJPHBhdGggZD0iTTEzLjUsMzZoMTBjMC41NTMsMCwxLTAuNDQ3LDEtMXMtMC40NDctMS0xLTFoLTEwYy0wLjU1MywwLTEsMC40NDctMSwxUzEyLjk0NywzNiwxMy41LDM2eiIgZGF0YS1vcmlnaW5hbD0iIzAwMDAwMCIgY2xhc3M9ImFjdGl2ZS1wYXRoIiBzdHlsZT0iZmlsbDojQ0NDQ0NDIiBkYXRhLW9sZF9jb2xvcj0iI2NjY2NjYyI+PC9wYXRoPgoJPHBhdGggZD0iTTI2LjUsMzZjMC4yNywwLDAuNTItMC4xMSwwLjcxLTAuMjljMC4xOC0wLjE5LDAuMjktMC40NSwwLjI5LTAuNzFzLTAuMTEtMC41MjEtMC4yOS0wLjcxYy0wLjM3LTAuMzctMS4wNC0wLjM3LTEuNDEsMCAgIGMtMC4xOSwwLjE4OS0wLjMsMC40MzktMC4zLDAuNzFjMCwwLjI3LDAuMTA5LDAuNTIsMC4yOSwwLjcxQzI1Ljk3OSwzNS44OSwyNi4yMjksMzYsMjYuNSwzNnoiIGRhdGEtb3JpZ2luYWw9IiMwMDAwMDAiIGNsYXNzPSJhY3RpdmUtcGF0aCIgc3R5bGU9ImZpbGw6I0NDQ0NDQyIgZGF0YS1vbGRfY29sb3I9IiNjY2NjY2MiPjwvcGF0aD4KPC9nPjwvZz4gPC9zdmc+" />`;
+
+const plusIcon = `<img src="data:image/svg+xml;base64,
+PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2ZXJzaW9uPSIxLjEiIGlkPSJDYXBhXzEiIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgNTIgNTIiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDUyIDUyOyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGNsYXNzPSIiPjxnPjxwYXRoIGQ9Ik0yNiwwQzExLjY2NCwwLDAsMTEuNjYzLDAsMjZzMTEuNjY0LDI2LDI2LDI2czI2LTExLjY2MywyNi0yNlM0MC4zMzYsMCwyNiwweiBNMzguNSwyOEgyOHYxMWMwLDEuMTA0LTAuODk2LDItMiwyICBzLTItMC44OTYtMi0yVjI4SDEzLjVjLTEuMTA0LDAtMi0wLjg5Ni0yLTJzMC44OTYtMiwyLTJIMjRWMTRjMC0xLjEwNCwwLjg5Ni0yLDItMnMyLDAuODk2LDIsMnYxMGgxMC41YzEuMTA0LDAsMiwwLjg5NiwyLDIgIFMzOS42MDQsMjgsMzguNSwyOHoiIGRhdGEtb3JpZ2luYWw9IiMwMDAwMDAiIGNsYXNzPSJhY3RpdmUtcGF0aCIgc3R5bGU9ImZpbGw6I0NDQ0NDQyIgZGF0YS1vbGRfY29sb3I9IiNjY2NjY2MiPjwvcGF0aD48L2c+IDwvc3ZnPg==" />`;
 
 function removeNote(noteId) {
   //getNotes

@@ -1,6 +1,6 @@
 {
-    "name":"Sticky Notes & Clip Board",
-    "version":"0.1",
+    "name":"Clip Board & Notes",
+    "version":"0.1.1",
     "description":"Sticky notes in browser",
     "manifest_version":2,
     "permissions":["storage","declarativeContent","activeTab","clipboardRead","clipboardWrite"],
