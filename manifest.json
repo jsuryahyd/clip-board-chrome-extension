@@ -1,0 +1,14 @@
+{
+    "name":"Sticky Notes & Clip Board",
+    "version":"0.1",
+    "description":"Sticky notes in browser",
+    "manifest_version":2,
+    "permissions":["storage","declarativeContent","activeTab","clipboardRead","clipboardWrite"],
+    "background":{
+        "scripts":["background.js"],
+        "persistent":true
+    },
+    "browser_action":{
+        "default_popup":"popup.html"
+    }
+}
