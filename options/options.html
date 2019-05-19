@@ -5,12 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
+    <style>
+    .color-picker{
+        width: 60px;
+    background: none;
+    border: none;
+    margin-bottom: 15px;
+    height: 60px;
+    border-radius: 5px;
+    vertical-align: middle
+    }
+    </style>
 </head>
 <body>
     <h2>Customize</h2>
-    <div  id="options_container"></div>
+    <div  id="options_container">
+<label style="width:300px" >Theme Color : <input type="color" id="background-color-picker" class="color-picker" /></label>
+<br/>
+<label style="width:300px" >Card Background : <input type="color" id="card-bg-color-picker" colorformat="rgba" class="color-picker" /></label>
+<br/>
+<label style="width:300px" >Text Color : <input type="color" id="text-color-picker" class="color-picker" /></label>
 
+    </div>
+<button id="options_reset_btn">
+    Reset
+</button>
+<footer style="position:fixed;bottom:0;width:100%;background-color: #696969;left:0;height: 60px;
+text-align: center;
+" ><h3 class="" style="margin-top:10px">
+Clipboard by <i>Jaya Surya</i>
+</h3>
+        <div>Icons made by <a href="https://www.flaticon.com/authors/iconixar" title="iconixar">iconixar</a> from <a href="https://www.flaticon.com/" 			    title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" 			    title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
 
+</footer>
 </body>
 <script src="options.js"></script>
 </html>

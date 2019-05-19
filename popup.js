@@ -26,7 +26,7 @@ var bkg = chrome.extension.getBackgroundPage();
 function addCardOnClick() {
   let noteId = new Date().valueOf();
   let note = { text: "", noteId };
-  appendCard(note,true);
+  appendCard(note, true);
   let content = document.querySelector(`[data-edit-id="${noteId}"]`);
   content.focus();
   getNotesAnd(notes => {
@@ -37,11 +37,23 @@ function addCardOnClick() {
 }
 
 document.addEventListener("DOMContentLoaded", e => {
+  // document.body.style.backgroundColor
+  chrome.storage.sync.get(["color", "card-bg-color", "text-color"], data => {
+    let color = data.color;
+    console.log(data);
+    // document.body.style.backgroundColor = color;
+    document.body.style.setProperty("--theme-color", color);
+    document.body.style.setProperty("--card-bg", data["card-bg-color"]);
+    document.body.style.setProperty("--text-color", data["text-color"]);
+  });
   let el = document.getElementsByClassName("content_card--dummy")[0];
   el && (el.onclick = addCardOnClick);
 
   let add_notes_btn = document.getElementById("add_notes_btn");
   add_notes_btn.onclick = addCardOnClick;
+
+  var optionsBtn = document.getElementById("options_btn");
+  optionsBtn.onclick = ()=>{chrome.runtime.openOptionsPage();}
 });
 
 //append previously pasted cards
@@ -92,9 +104,9 @@ function getClipboardData() {
 }
 
 /**
- * 
- * @param {object} param0 
- * @param {boolean} animation 
+ *
+ * @param {object} param0
+ * @param {boolean} animation
  */
 function appendCard({ text, noteId }, animation) {
   let contentCard = document.createElement("div");
@@ -108,7 +120,7 @@ function appendCard({ text, noteId }, animation) {
   </button>
   <button class="btn--no_style card__action-btn delete-card-btn" data-remove-id="${noteId}" >${deleteIcon()}</button>
   <button class="btn--no_style card__action-btn" data-copy-id="${noteId}" >${copyIcon}</button>
-  </div></div><div class="note-content" contentEditable=true>${text}</div>`; //.replace(/\n/g, "<br/>")
+  </div></div><textarea class="note-content" rows=4als f>${text}</textarea>`; //.replace(/\n/g, "<br/>")
   cards.appendChild(contentCard);
   document.querySelector(`[data-remove-id="${noteId}"]`).onclick = () =>
     removeNote(noteId);
@@ -116,10 +128,14 @@ function appendCard({ text, noteId }, animation) {
 
   content.onfocus = e => {
     focusedNoteId = noteId;
+    //remove the save icon if any, from other cards or this card
+    [...document.querySelectorAll("#save_card_btn")].forEach(el =>
+      el.parentNode.removeChild(el)
+    );
     //add save icon.
     contentCard.insertAdjacentHTML(
       "beforeend",
-      `<div class="" id="save_card_btn" >${saveIcon}</div>`
+      `<div class="clearfix"><div class="" id="save_card_btn" >${saveIcon}</div></div>`
     );
 
     let saveBtn = document.getElementById("save_card_btn");
@@ -129,6 +145,8 @@ function appendCard({ text, noteId }, animation) {
         onEditComplete(content, noteId);
         saveBtn.parentNode.removeChild(saveBtn);
       });
+
+    createCaretPlacer(false)(content);
   };
 
   content.onkeyup = e => {};
@@ -156,21 +174,25 @@ function scrollToBottom(el) {
 }
 
 function selectText(node) {
-  if (document.body.createTextRange) {
-    const range = document.body.createTextRange();
-    range.moveToElementText(node);
-    range.select();
-    document.execCommand("copy");
-  } else if (window.getSelection) {
-    const selection = window.getSelection();
-    const range = document.createRange();
-    range.selectNodeContents(node);
-    selection.removeAllRanges();
-    selection.addRange(range);
-    document.execCommand("copy");
-  } else {
-    // bkg.console.warn("Could not select text in node: Unsupported browser.");
-  }
+  // if (document.body.createTextRange) {
+  //   const range = document.body.createTextRange();
+  //   range.moveToElementText(node);
+  //   range.select();
+  //   document.execCommand("copy");
+  // } else if (window.getSelection) {
+  //   const selection = window.getSelection();
+  //   const range = document.createRange();
+  //   range.selectNodeContents(node);
+  //   selection.removeAllRanges();
+  //   selection.addRange(range);
+  //   document.execCommand("copy");
+  // } else {
+  //   // bkg.console.warn("Could not select text in node: Unsupported browser.");
+  // }
+  node.select();
+  document.execCommand("copy");
+  let saveBtn = document.getElementById("save_card_btn");
+  saveBtn && saveBtn.parentNode.removeChild(saveBtn);
 }
 
 function deleteIcon(className) {
@@ -189,6 +211,9 @@ PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8v
 
 const plusIcon = `<img src="data:image/svg+xml;base64,
 PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2ZXJzaW9uPSIxLjEiIGlkPSJDYXBhXzEiIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgNTIgNTIiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDUyIDUyOyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGNsYXNzPSIiPjxnPjxwYXRoIGQ9Ik0yNiwwQzExLjY2NCwwLDAsMTEuNjYzLDAsMjZzMTEuNjY0LDI2LDI2LDI2czI2LTExLjY2MywyNi0yNlM0MC4zMzYsMCwyNiwweiBNMzguNSwyOEgyOHYxMWMwLDEuMTA0LTAuODk2LDItMiwyICBzLTItMC44OTYtMi0yVjI4SDEzLjVjLTEuMTA0LDAtMi0wLjg5Ni0yLTJzMC44OTYtMiwyLTJIMjRWMTRjMC0xLjEwNCwwLjg5Ni0yLDItMnMyLDAuODk2LDIsMnYxMGgxMC41YzEuMTA0LDAsMiwwLjg5NiwyLDIgIFMzOS42MDQsMjgsMzguNSwyOHoiIGRhdGEtb3JpZ2luYWw9IiMwMDAwMDAiIGNsYXNzPSJhY3RpdmUtcGF0aCIgc3R5bGU9ImZpbGw6I0NDQ0NDQyIgZGF0YS1vbGRfY29sb3I9IiNjY2NjY2MiPjwvcGF0aD48L2c+IDwvc3ZnPg==" />`;
+
+const settingsIcon = `<img src="data:image/svg+xml;base64,
+PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2ZXJzaW9uPSIxLjEiIGlkPSJDYXBhXzEiIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgMjY4Ljc2NSAyNjguNzY1IiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAyNjguNzY1IDI2OC43NjU7IiB4bWw6c3BhY2U9InByZXNlcnZlIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgY2xhc3M9IiI+PGc+PGcgaWQ9IlNldHRpbmdzIj4KCTxnPgoJCTxwYXRoIHN0eWxlPSJmaWxsOiNDQ0NDQ0MiIGQ9Ik0yNjcuOTIsMTE5LjQ2MWMtMC40MjUtMy43NzgtNC44My02LjYxNy04LjYzOS02LjYxNyAgICBjLTEyLjMxNSwwLTIzLjI0My03LjIzMS0yNy44MjYtMTguNDE0Yy00LjY4Mi0xMS40NTQtMS42NjMtMjQuODEyLDcuNTE1LTMzLjIzMWMyLjg4OS0yLjY0MSwzLjI0LTcuMDYyLDAuODE3LTEwLjEzMyAgICBjLTYuMzAzLTguMDA0LTEzLjQ2Ny0xNS4yMzQtMjEuMjg5LTIxLjVjLTMuMDYzLTIuNDU4LTcuNTU3LTIuMTE2LTEwLjIxMywwLjgyNWMtOC4wMSw4Ljg3MS0yMi4zOTgsMTIuMTY4LTMzLjUxNiw3LjUyOSAgICBjLTExLjU3LTQuODY3LTE4Ljg2Ni0xNi41OTEtMTguMTUyLTI5LjE3NmMwLjIzNS0zLjk1My0yLjY1NC03LjM5LTYuNTk1LTcuODQ5Yy0xMC4wMzgtMS4xNjEtMjAuMTY0LTEuMTk3LTMwLjIzMi0wLjA4ICAgIGMtMy44OTYsMC40My02Ljc4NSwzLjc4Ni02LjY1NCw3LjY4OWMwLjQzOCwxMi40NjEtNi45NDYsMjMuOTgtMTguNDAxLDI4LjY3MmMtMTAuOTg1LDQuNDg3LTI1LjI3MiwxLjIxOC0zMy4yNjYtNy41NzQgICAgYy0yLjY0Mi0yLjg5Ni03LjA2My0zLjI1Mi0xMC4xNDEtMC44NTNjLTguMDU0LDYuMzE5LTE1LjM3OSwxMy41NTUtMjEuNzQsMjEuNDkzYy0yLjQ4MSwzLjA4Ni0yLjExNiw3LjU1OSwwLjgwMiwxMC4yMTQgICAgYzkuMzUzLDguNDcsMTIuMzczLDIxLjk0NCw3LjUxNCwzMy41M2MtNC42MzksMTEuMDQ2LTE2LjEwOSwxOC4xNjUtMjkuMjQsMTguMTY1Yy00LjI2MS0wLjEzNy03LjI5NiwyLjcyMy03Ljc2Miw2LjU5NyAgICBjLTEuMTgyLDEwLjA5Ni0xLjE5NiwyMC4zODMtMC4wNTgsMzAuNTYxYzAuNDIyLDMuNzk0LDQuOTYxLDYuNjA4LDguODEyLDYuNjA4YzExLjcwMi0wLjI5OSwyMi45MzcsNi45NDYsMjcuNjUsMTguNDE1ICAgIGM0LjY5OCwxMS40NTQsMS42NzgsMjQuODA0LTcuNTE0LDMzLjIzYy0yLjg3NSwyLjY0MS0zLjI0LDcuMDU1LTAuODE3LDEwLjEyNmM2LjI0NCw3Ljk1MywxMy40MDksMTUuMTksMjEuMjU5LDIxLjUwOCAgICBjMy4wNzksMi40ODEsNy41NTksMi4xMzEsMTAuMjI4LTAuODFjOC4wNC04Ljg5MywyMi40MjctMTIuMTg0LDMzLjUwMS03LjUzNmMxMS41OTksNC44NTIsMTguODk1LDE2LjU3NSwxOC4xODEsMjkuMTY3ICAgIGMtMC4yMzMsMy45NTUsMi42Nyw3LjM5OCw2LjU5NSw3Ljg1YzUuMTM1LDAuNTk5LDEwLjMwMSwwLjg5OCwxNS40ODEsMC44OThjNC45MTcsMCw5LjgzNS0wLjI3LDE0Ljc1Mi0wLjgxNyAgICBjMy44OTctMC40Myw2Ljc4NC0zLjc4Niw2LjY1My03LjY5NmMtMC40NTEtMTIuNDU0LDYuOTQ2LTIzLjk3MywxOC4zODYtMjguNjU3YzExLjA1OS00LjUxNywyNS4yODYtMS4yMTEsMzMuMjgxLDcuNTcyICAgIGMyLjY1NywyLjg5LDcuMDQ3LDMuMjM5LDEwLjE0MiwwLjg0OGM4LjAzOS02LjMwNCwxNS4zNDktMTMuNTM0LDIxLjc0LTIxLjQ5NGMyLjQ4LTMuMDc5LDIuMTMtNy41NTktMC44MDMtMTAuMjEzICAgIGMtOS4zNTMtOC40Ny0xMi4zODgtMjEuOTQ2LTcuNTI5LTMzLjUyNGM0LjU2OC0xMC44OTksMTUuNjEyLTE4LjIxNywyNy40OTEtMTguMjE3bDEuNjYyLDAuMDQzICAgIGMzLjg1MywwLjMxMyw3LjM5OC0yLjY1NSw3Ljg2NS02LjU4OEMyNjkuMDQ0LDEzOS45MTcsMjY5LjA1OCwxMjkuNjM5LDI2Ny45MiwxMTkuNDYxeiBNMTM0LjU5NSwxNzkuNDkxICAgIGMtMjQuNzE4LDAtNDQuODI0LTIwLjEwNi00NC44MjQtNDQuODI0YzAtMjQuNzE3LDIwLjEwNi00NC44MjQsNDQuODI0LTQ0LjgyNGMyNC43MTcsMCw0NC44MjMsMjAuMTA3LDQ0LjgyMyw0NC44MjQgICAgQzE3OS40MTgsMTU5LjM4NSwxNTkuMzEyLDE3OS40OTEsMTM0LjU5NSwxNzkuNDkxeiIgZGF0YS1vcmlnaW5hbD0iIzAwMDAwMCIgY2xhc3M9ImFjdGl2ZS1wYXRoIiBkYXRhLW9sZF9jb2xvcj0iI2NjY2NjYyI+PC9wYXRoPgoJPC9nPgo8L2c+PC9nPiA8L3N2Zz4=" />`;
 
 function removeNote(noteId) {
   //getNotes
@@ -216,7 +241,7 @@ function onEditComplete(content, noteId, cb) {
   getNotesAnd(notes => {
     notes = notes.reduce((nts, n) => {
       if (n.noteId == noteId) {
-        n.text = content.innerHTML;
+        n.text = content.value; //content.innerHTML
       }
       nts.push(n);
       return nts;
