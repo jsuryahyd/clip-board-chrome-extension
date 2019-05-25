@@ -27,11 +27,12 @@ function addCardOnClick() {
   let noteId = new Date().valueOf();
   let note = { text: "", noteId };
   appendCard(note, true);
-  let content = document.querySelector(`[data-edit-id="${noteId}"]`);
+  let content = document.querySelector(`[data-content-id="${noteId}"]`);
+  console.log(content);
   content.focus();
+  createCaretPlacer(true)(content);
   getNotesAnd(notes => {
     notes.push(note);
-
     chrome.storage.sync.set({ notes });
   });
 }
@@ -45,6 +46,22 @@ document.addEventListener("DOMContentLoaded", e => {
     document.body.style.setProperty("--theme-color", color);
     document.body.style.setProperty("--card-bg", data["card-bg-color"]);
     document.body.style.setProperty("--text-color", data["text-color"]);
+    let cardBorderColor = data["text-color"];
+    if (!isDark(data["card-bg-color"] && isDark(data["color"]))) {
+      cardBorderColor = data["card-bg-color"];
+    }
+    document.body.style.setProperty("--card-border-color",cardBorderColor);
+    if (document.body.style.getPropertyValue("--theme-color") == "#ffffff") {
+      let textColor = document.body.style.getPropertyValue("--text-color");
+      if (textColor == "#ffffff") {
+        textColor = document.body.style.getPropertyValue("--card-bg");
+      }
+      //SET app title and ctrl+v to card color
+      document.getElementsByClassName("app-title")[0].style.color = textColor;
+      document.getElementsByClassName(
+        "content_card--dummy"
+      )[0].style.color = textColor;
+    }
   });
   let el = document.getElementsByClassName("content_card--dummy")[0];
   el && (el.onclick = addCardOnClick);
@@ -53,13 +70,20 @@ document.addEventListener("DOMContentLoaded", e => {
   add_notes_btn.onclick = addCardOnClick;
 
   var optionsBtn = document.getElementById("options_btn");
-  optionsBtn.onclick = ()=>{chrome.runtime.openOptionsPage();}
+  optionsBtn.onclick = () => {
+    chrome.runtime.openOptionsPage();
+  };
 });
 
 //append previously pasted cards
 getNotesAnd(notes => {
-  notes && Array.isArray(notes) && notes.forEach(note => appendCard(note));
+  notes = notes && Array.isArray(notes) ? notes.filter(n => !!n.text) : [];
+  notes.forEach(note => appendCard(note));
+  chrome.storage.sync.set({ notes: notes }, () => {
+    //success
+  });
   scrollToBottom(mainSection);
+  //remove empty notes
 });
 
 document.body.addEventListener("keydown", async e => {
@@ -120,36 +144,63 @@ function appendCard({ text, noteId }, animation) {
   </button>
   <button class="btn--no_style card__action-btn delete-card-btn" data-remove-id="${noteId}" >${deleteIcon()}</button>
   <button class="btn--no_style card__action-btn" data-copy-id="${noteId}" >${copyIcon}</button>
-  </div></div><textarea class="note-content" rows=4als f>${text}</textarea>`; //.replace(/\n/g, "<br/>")
+  <button class="btn--no_style card__action-btn card__action--save" data-save-id="${noteId}" >Save</button>
+  </div></div><textarea class="note-content" rows=4 data-content-id="${noteId}">${text}</textarea>`; //.replace(/\n/g, "<br/>")
   cards.appendChild(contentCard);
   document.querySelector(`[data-remove-id="${noteId}"]`).onclick = () =>
     removeNote(noteId);
   let content = contentCard.getElementsByClassName("note-content")[0];
 
+  let actionsDiv = contentCard.getElementsByClassName("card__actions")[0];
   content.onfocus = e => {
     focusedNoteId = noteId;
+    // let actionBtns = contentCard.getElementsByClassName("card__action_btn");
+    // [...actionBtns].forEach(a => {
+    //   a.classList.add("d-none");
+    // });
     //remove the save icon if any, from other cards or this card
-    [...document.querySelectorAll("#save_card_btn")].forEach(el =>
-      el.parentNode.removeChild(el)
+    [...document.getElementsByClassName("card__actions")].forEach(el =>
+      el.classList.remove("edit-mode")
     );
-    //add save icon.
-    contentCard.insertAdjacentHTML(
-      "beforeend",
-      `<div class="clearfix"><div class="" id="save_card_btn" >${saveIcon}</div></div>`
-    );
-
-    let saveBtn = document.getElementById("save_card_btn");
-    // alert(!!saveBtn);
-    saveBtn &&
-      (saveBtn.onclick = () => {
-        onEditComplete(content, noteId);
-        saveBtn.parentNode.removeChild(saveBtn);
-      });
-
+    actionsDiv.classList.add("edit-mode");
     createCaretPlacer(false)(content);
   };
 
-  content.onkeyup = e => {};
+  let saveBtn = contentCard.getElementsByClassName("card__action--save")[0];
+  // alert(!!saveBtn);
+  saveBtn &&
+    (saveBtn.onclick = function() {
+      //use of 'this' so, no arrow function
+      onEditComplete(content, noteId);
+      this.innerText = "Saved";
+      setTimeout(() => {
+        actionsDiv.classList.remove("edit-mode");
+        this.innerText = "Save";
+      }, 700);
+    });
+
+  // content.onblur = () => {
+  //   actionsDiv.classList.remove("edit-mode");
+  // };
+
+  let saveOnPause = null;
+  content.onkeyup = function(e) {
+    if (e.keyCode >= 37 && e.keyCode <= 40) {
+      return false;
+    }
+    clearTimeout(saveOnPause);
+    saveOnPause = setTimeout(() => {
+      onEditComplete(content, noteId, () => {
+        saveBtn.innerText = "Auto Saved";
+        setTimeout(() => {
+          saveBtn.innerText = "Save";
+        }, 600);
+      });
+    }, 1500);
+
+    // this.style.height = Math.max(this.scrollHeight+ 8, 60) + "px";//4+4 padding
+    // this.parentElement.height = "auto"
+  };
   content.addEventListener("paste", pasteAsPlainText);
   document.querySelector(`[data-edit-id="${noteId}"]`).onclick = () => {
     // content.focus();
@@ -291,10 +342,8 @@ function createCaretPlacer(atStart) {
 function pasteAsPlainText(e) {
   // cancel paste
   e.preventDefault();
-
   // get text representation of clipboard
   var text = (e.originalEvent || e).clipboardData.getData("text/plain");
-
   // insert text manually
   document.execCommand("insertHTML", false, text);
 }

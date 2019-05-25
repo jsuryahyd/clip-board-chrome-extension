@@ -10,7 +10,7 @@ chrome.runtime.onInstalled.addListener(function() {
 // });
 
 function onInstalled() {
-  chrome.storage.sync.set({ color: "#3aa757", notes: [] }, function() {
+  chrome.storage.sync.set({ color: "#696969","card-bg-color":"#ffffff","text-color":"#333333", notes: [] }, function() {
     console.log("what the hell?");
   });
 }
