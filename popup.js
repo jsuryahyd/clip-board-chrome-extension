@@ -47,10 +47,10 @@ document.addEventListener("DOMContentLoaded", e => {
     document.body.style.setProperty("--card-bg", data["card-bg-color"]);
     document.body.style.setProperty("--text-color", data["text-color"]);
     let cardBorderColor = data["text-color"];
-    if (!isDark(data["card-bg-color"] && isDark(data["color"]))) {
+    if (!isDark(data["card-bg-color"]) && isDark(data["color"])) {
       cardBorderColor = data["card-bg-color"];
     }
-    document.body.style.setProperty("--card-border-color",cardBorderColor);
+    document.body.style.setProperty("--card-border-color", cardBorderColor);
     if (document.body.style.getPropertyValue("--theme-color") == "#ffffff") {
       let textColor = document.body.style.getPropertyValue("--text-color");
       if (textColor == "#ffffff") {
@@ -165,7 +165,10 @@ function appendCard({ text, noteId }, animation) {
     actionsDiv.classList.add("edit-mode");
     createCaretPlacer(false)(content);
   };
-
+  // content.onblur = e=>{
+  //   console.log(e.target.nodeName)
+  //   if(e.target.getEventListeners()) return false;
+  // }
   let saveBtn = contentCard.getElementsByClassName("card__action--save")[0];
   // alert(!!saveBtn);
   saveBtn &&
@@ -207,9 +210,10 @@ function appendCard({ text, noteId }, animation) {
     createCaretPlacer(false)(content);
   };
 
-  document.querySelector(`[data-copy-id="${noteId}"]`).onclick = () =>
+  document.querySelector(`[data-copy-id="${noteId}"]`).onclick = () => {
     selectText(content);
-
+    actionsDiv.classList.remove("edit-mode");
+  };
   if (animation) contentCard.style.animation = "glow 1s linear 0s 1";
 }
 
