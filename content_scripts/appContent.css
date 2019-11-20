@@ -1,0 +1,43 @@
+.inputArea {
+  width: 70%;
+  max-width: 100vw - 300px;
+  background: transparent;
+}
+
+.sidebar {
+  min-width: 300px;
+  width: 30%;
+  z-index: 10000;
+  height: 100vh;
+  background: white;
+  /* box-shadow: -5px 0 10px -3px #fef;*/
+}
+
+.appBody {
+    z-index: 10000;
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7);
+  align-items: stretch;
+  justify-content: start;
+  display: none;
+  animation: 0.3s fadeIn reverse ease-in-out;
+}
+
+.appBody.visible {
+  display: flex;
+  animation: 0.3s fadeIn ease-in-out;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}

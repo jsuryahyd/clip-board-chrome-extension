@@ -1,3 +1,4 @@
+/// <reference path="./chrome.d.ts"/>
 // let port = chrome.tabs.connect(chrome.tabs[0]);
 
 // port.onMessage.addListener(msg => {});
@@ -24,6 +25,7 @@ var bkg = chrome.extension.getBackgroundPage();
 // };
 
 function addCardOnClick() {
+  console.log("clicked");
   let noteId = new Date().valueOf();
   let note = { text: "", noteId };
   appendCard(note, true);
@@ -37,43 +39,45 @@ function addCardOnClick() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", e => {
-  // document.body.style.backgroundColor
-  chrome.storage.sync.get(["color", "card-bg-color", "text-color"], data => {
-    let color = data.color;
-    console.log(data);
-    // document.body.style.backgroundColor = color;
-    document.body.style.setProperty("--theme-color", color);
-    document.body.style.setProperty("--card-bg", data["card-bg-color"]);
-    document.body.style.setProperty("--text-color", data["text-color"]);
-    let cardBorderColor = data["text-color"];
-    if (!isDark(data["card-bg-color"]) && isDark(data["color"])) {
-      cardBorderColor = data["card-bg-color"];
-    }
-    document.body.style.setProperty("--card-border-color", cardBorderColor);
-    if (document.body.style.getPropertyValue("--theme-color") == "#ffffff") {
-      let textColor = document.body.style.getPropertyValue("--text-color");
-      if (textColor == "#ffffff") {
-        textColor = document.body.style.getPropertyValue("--card-bg");
-      }
-      //SET app title and ctrl+v to card color
-      document.getElementsByClassName("app-title")[0].style.color = textColor;
-      document.getElementsByClassName(
-        "content_card--dummy"
-      )[0].style.color = textColor;
-    }
-  });
-  let el = document.getElementsByClassName("content_card--dummy")[0];
-  el && (el.onclick = addCardOnClick);
 
-  let add_notes_btn = document.getElementById("add_notes_btn");
-  add_notes_btn.onclick = addCardOnClick;
-
-  var optionsBtn = document.getElementById("options_btn");
-  optionsBtn.onclick = () => {
-    chrome.runtime.openOptionsPage();
-  };
+console.log('wth')
+// document.addEventListener("DOMContentLoaded", e => {
+// document.body.style.backgroundColor
+chrome.storage.sync.get(["color", "card-bg-color", "text-color"], data => {
+  let color = data.color;
+  console.log(data);
+  // document.body.style.backgroundColor = color;
+  document.body.style.setProperty("--theme-color", color);
+  document.body.style.setProperty("--card-bg", data["card-bg-color"]);
+  document.body.style.setProperty("--text-color", data["text-color"]);
+  let cardBorderColor = data["text-color"];
+  if (!isDark(data["card-bg-color"]) && isDark(data["color"])) {
+    cardBorderColor = data["card-bg-color"];
+  }
+  document.body.style.setProperty("--card-border-color", cardBorderColor);
+  if (document.body.style.getPropertyValue("--theme-color") == "#ffffff") {
+    let textColor = document.body.style.getPropertyValue("--text-color");
+    if (textColor == "#ffffff") {
+      textColor = document.body.style.getPropertyValue("--card-bg");
+    }
+    //SET app title and ctrl+v to card color
+    document.getElementsByClassName("app-title")[0].style.color = textColor;
+    document.getElementsByClassName(
+      "content_card--dummy"
+    )[0].style.color = textColor;
+  }
 });
+let el = document.getElementsByClassName("content_card--dummy")[0];
+el && (el.onclick = addCardOnClick);
+
+let add_notes_btn = document.getElementById("add_notes_btn");
+add_notes_btn.onclick = addCardOnClick;
+
+var optionsBtn = document.getElementById("options_btn");
+optionsBtn.onclick = () => {
+  chrome.runtime.openOptionsPage();
+};
+// });
 
 //append previously pasted cards
 getNotesAnd(notes => {
@@ -351,3 +355,5 @@ function pasteAsPlainText(e) {
   // insert text manually
   document.execCommand("insertHTML", false, text);
 }
+
+// createIframe(iframeStyles);
