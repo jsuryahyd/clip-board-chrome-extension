@@ -1,4 +1,5 @@
 ///<reference path="../chrome.d.ts"/>
+///<reference path="../gapi.d.ts"/>
 document.addEventListener("DOMContentLoaded", onPageLoad);
 function onPageLoad() {
   //add eventlisteners
@@ -8,6 +9,7 @@ function onPageLoad() {
   let resetBtn = document.getElementById("options_reset_btn");
   let downloadNotes = document.getElementById("download_notes");
   let uploadNotesInput = document.getElementById("upload_notes");
+  let backupBtn = document.getElementById("backup");
   chrome.storage.sync.get(["color", "card-bg-color", "text-color"], data => {
     console.log(data);
     bgColorPicker.value = data.color;
@@ -48,6 +50,23 @@ function onPageLoad() {
   uploadNotesInput.onchange = function() {
     uploadNotes(this);
   };
+
+  setTimeout(() => {
+    gapi.client.load("drive", "v3", () => {
+      backupBtn.style.display = "block";
+      backupBtn.onclick = () => {
+        chrome.identity.getAuthToken({ interactive: true }, function(token) {
+          chrome.storage.sync.get("notes", data => {
+            driveBackup(data, token);
+          });
+        });
+      };
+
+      chrome.identity.getAuthToken({ interactive: true }, function(token) {
+        fetchBackup(token);
+      });
+    });
+  }, 3000);
 }
 
 function saveValues(name, event) {
@@ -115,5 +134,117 @@ function uploadNotes(input) {
       });
     });
   };
+
+  reader.onerror = ev => {
+    console.error(ev);
+    alert("Error while reading the file.");
+  };
   reader.readAsText(file, "UTF-8");
+}
+
+function driveBackup(data, token) {
+  var fileMetadata = {
+    name: "data.json",
+    parents: ["appDataFolder"]
+  };
+
+  const formData = new FormData();
+  formData.append(
+    "data",
+    new File(
+      [new Blob([JSON.stringify(data)], { type: "application/json" })],
+      "data.json"
+    )
+  );
+  var media = {
+    mimeType: "application/json",
+    // body: new Blob([JSON.stringify(data)], { type: "application/json" })
+    body: new File(
+      [new Blob([JSON.stringify(data)], { type: "application/json" })],
+      "data.json"
+    )
+    // "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data))
+  };
+  const createRequest = gapi.client.drive.files.create({
+    resource: fileMetadata,
+    media: media,
+    fields: "id",
+    oauth_token: token
+  });
+
+  createRequest.execute((...args) => {
+    console.log(args);
+
+    chrome.storage.sync.set({ backupId: args[0].id });
+  });
+
+  // const files = gapi.client.drive.files.list({
+  //   maxResults: 5,
+  //   oauth_token: token
+  // });
+  // files.then(
+  //   files => {
+  //     console.log(files);
+  //   },
+  //   err => {
+  //     console.error(err);
+  //   }
+  // );
+
+  // fetch(
+  //   `https://www.googleapis.com/upload/drive/v3/files?uploadType=media&spaces=appDataFolder`,
+  //   {
+  //     method: "POST",
+  //     // body: new Blob([JSON.stringify(data)], { type: "application/json" }),
+  //     body: JSON.stringify(data),
+  //     // body: {
+  //     //   media: new Blob([JSON.stringify(data)], { type: "application/json" }),
+  //     //   parents: ["appDataFolder"],
+  //     //   name: "data.json"
+  //     // },
+  //     // body: formData,
+  //     // body:
+  //     //   "data:text/json;charset=utf-8," +
+  //     //   encodeURIComponent(JSON.stringify(data)),
+  //     headers: {
+  //       "content-type": "application/json",
+  //       authorization: "Bearer " + token
+  //     }
+  //   }
+  // )
+  //   .then(response => {
+  //     if (response.ok) return response;
+  //     else
+  //       throw Error(
+  //         `Server returned ${response.status}: ${response.statusText}`
+  //       );
+  //   })
+  //   .then(response => console.log(response.text()))
+  //   .catch(err => {
+  //     console.error(err);
+  //   });
+}
+
+function fetchBackup(token) {
+  chrome.storage.sync.get("backupId", data => {
+    console.log(data);
+    if (!data.backupId) {
+      return false;
+    }
+
+    // gapi.client.drive.()
+
+    const files = gapi.client.drive.files.list({
+      maxResults: 5,
+      oauth_token: token
+    });
+    files.then(
+      files => {
+        console.log(files);
+      },
+      err => {
+        console.error(err);
+      }
+    );
+  });
 }

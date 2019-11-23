@@ -58,7 +58,7 @@
         color: white;
         margin-bottom: 10px;
         display: block;
-        text-align: center; 
+        text-align: center;
       }
 
       .row {
@@ -66,9 +66,9 @@
         justify-content: flex-start;
         align-items: stretch;
       }
-      .col{
-        padding-right:15px;
-        padding-left:15px
+      .col {
+        padding-right: 15px;
+        padding-left: 15px;
       }
     </style>
   </head>
@@ -122,6 +122,17 @@
               style="opacity:0;width:0;height:0"
             />
           </div>
+<div>
+<button id="backup" style="display:none">Backup</button>
+
+</div>
+          <div>
+            <!--Add buttons to initiate auth sequence and sign out-->
+            <button id="authorize_button" style="display: none;">
+              Authorize
+            </button>
+            <button id="signout_button" style="display: none;">Sign Out</button>
+          </div>
         </div>
       </div>
     </div>
@@ -152,4 +163,7 @@ text-align: center;
   </body>
   <script src="invertColor.js"></script>
   <script src="options.js"></script>
+
+  <!-- <script  src="../gapi.js" id="gapi"></script> -->
+  <script src="https://apis.google.com/js/client.js" ></script>
 </html>
